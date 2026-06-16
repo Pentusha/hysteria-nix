@@ -9,8 +9,14 @@ cd "$repo_root"
 
 versions_file="$root/versions.json"
 
+# Use GITHUB_TOKEN when available for higher API rate limits
+auth_header=""
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  auth_header="Authorization: Bearer ${GITHUB_TOKEN}"
+fi
+
 # Fetch latest version
-latest_version=$(curl -fsSL https://api.github.com/repos/apernet/hysteria/releases/latest | jq -r '.tag_name | sub("^app/v"; "")')
+latest_version=$(curl -fsSL -H "$auth_header" https://api.github.com/repos/apernet/hysteria/releases/latest | jq -r '.tag_name | sub("^app/v"; "")')
 echo "Updating hysteria to v${latest_version}..."
 
 # Get src hash and rev via nix-prefetch-github
@@ -19,11 +25,11 @@ src_hash=$(echo "$prefetch_data" | jq -r '.hash')
 rev=$(echo "$prefetch_data" | jq -r '.rev')
 
 # Get date from GitHub API (YYYYMMDD format)
-commit_data=$(curl -fsSL "https://api.github.com/repos/apernet/hysteria/commits/${rev}")
+commit_data=$(curl -fsSL -H "$auth_header" "https://api.github.com/repos/apernet/hysteria/commits/${rev}")
 date=$(echo "$commit_data" | jq -r '.commit.committer.date' | cut -c1-10 | tr -d '-')
 
 # Extract libVersion from core/go.mod
-libVersion=$(curl -fsSL "https://raw.githubusercontent.com/apernet/hysteria/app/v${latest_version}/core/go.mod" | grep 'github.com/apernet/quic-go' | awk '{print $2}')
+libVersion=$(curl -fsSL "https://raw.githubusercontent.com/apernet/hysteria/app/v${latest_version}/core/go.mod" | awk '$1 == "github.com/apernet/quic-go" {print $2; exit}')
 
 # Compute vendor hash
 temp_dir=$(mktemp -d)

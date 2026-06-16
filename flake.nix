@@ -61,9 +61,9 @@ rec {
           inputsFrom = [ packages.hysteria ];
 
           shellHook = ''
-            rm -rf $HYSTERIA_TMP
-            cp -r --no-preserve=mode,ownership ${self.packages.${system}.hysteria.src} $HYSTERIA_TMP
-            cd $HYSTERIA_TMP
+            rm -rf -- "$HYSTERIA_TMP"
+            cp -r --no-preserve=mode,ownership -- "${self.packages.${system}.hysteria.src}" "$HYSTERIA_TMP"
+            cd "$HYSTERIA_TMP"
           '';
         };
       }
