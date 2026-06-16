@@ -5,11 +5,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1705309234,
-        "narHash": "sha256-uNRRNRKmJyCRC/8y1RqBkqWBLM034y4qN7EprSdmgyA=",
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "1ef2e671c3b0c19053962c07dbda38332dcebf26",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
         "type": "github"
       },
       "original": {
@@ -20,11 +20,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1719506693,
-        "narHash": "sha256-C8e9S7RzshSdHB7L+v9I51af1gDM5unhJ2xO1ywxNH8=",
+        "lastModified": 1781074563,
+        "narHash": "sha256-md8WlXOlfnIeHeOScMTTHFyf2d6iaTwPl2apR5EQ3P4=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "b2852eb9365c6de48ffb0dc2c9562591f652242a",
+        "rev": "9ae611a455b90cf061d8f332b977e387bda8e1ca",
         "type": "github"
       },
       "original": {
@@ -71,25 +71,7 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "options-nix": "options-nix",
-        "src": "src"
-      }
-    },
-    "src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1738634727,
-        "narHash": "sha256-0vd1cV2E07EntiOE0wHrSe4e/SRqbFrXhyBRFGxU7xY=",
-        "owner": "apernet",
-        "repo": "hysteria",
-        "rev": "401ed5245d9bdfe0a35d629a8d977f256da07a75",
-        "type": "github"
-      },
-      "original": {
-        "owner": "apernet",
-        "ref": "app/v2.6.1",
-        "repo": "hysteria",
-        "type": "github"
+        "options-nix": "options-nix"
       }
     },
     "systems": {

@@ -12,13 +12,6 @@ rec {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     options-nix.url = "github:eum3l/options.nix";
-    src = {
-      type = "github";
-      owner = "apernet";
-      repo = "hysteria";
-      ref = "app/v2.6.1";
-      flake = false;
-    };
   };
 
   outputs =
@@ -26,7 +19,6 @@ rec {
       self,
       nixpkgs,
       flake-utils,
-      src,
       options-nix,
     }:
     let
@@ -44,6 +36,7 @@ rec {
           inherit system;
           config.allowUnsupportedSystem = true;
         };
+        versions = pkgs.lib.importJSON ./versions.json;
       in
       rec {
         formatter = pkgs.nixfmt-rfc-style;
@@ -52,10 +45,7 @@ rec {
         packages = rec {
           default = hysteria;
           hysteria = pkgs.callPackage ./package.nix {
-            inherit platforms src;
-            inherit (self.inputs.src) lastModifiedDate rev;
-            version = pkgs.lib.removePrefix "app/v" inputs.src.ref;
-            vendorHash = "sha256-Wtbiv65iDC+3jAfYyoZXjIrwI/nqNB0ZHzC1f12+nxc=";
+            inherit platforms versions;
           };
 
           options = options-nix.lib.mkOptionScript {
@@ -71,8 +61,8 @@ rec {
           inputsFrom = [ packages.hysteria ];
 
           shellHook = ''
-            rm -r $HYSTERIA_TMP
-            cp -r --no-preserve=mode,ownership ${src} $HYSTERIA_TMP
+            rm -rf $HYSTERIA_TMP
+            cp -r --no-preserve=mode,ownership ${self.packages.${system}.hysteria.src} $HYSTERIA_TMP
             cd $HYSTERIA_TMP
           '';
         };

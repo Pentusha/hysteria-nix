@@ -1,77 +1,50 @@
 {
   lib,
   platforms,
-  src,
+  fetchFromGitHub,
   buildGoModule,
-  go,
-  runCommand,
-  vendorHash,
-  version,
-  lastModifiedDate,
-  rev,
+  versions,
 }:
+
+let
+  cmd = "github.com/apernet/hysteria/app/v2/cmd";
+in
 buildGoModule rec {
-  inherit version src vendorHash;
   pname = "hysteria";
+  version = versions.version;
+
+  src = fetchFromGitHub {
+    owner = "apernet";
+    repo = "hysteria";
+    rev = "app/v${versions.version}";
+    hash = versions.hash;
+  };
+
+  vendorHash = versions.vendorHash;
   modRoot = "./app";
   env.GOWORK = "off";
 
-  ldflags =
-    let
-      inherit (builtins)
-        elemAt
-        readFile
-        split
-        match
-        ;
-      cmd = "github.com/apernet/hysteria/app/v2/cmd";
-      goVersion = (
-        elemAt (match ".*(go.*)\n" (
-          readFile (runCommand "go-version.txt" { } "${go}/bin/go version > $out")
-        )) 0
-      );
-      goPlatform = index: elemAt (split "/" (elemAt (split " " goVersion) 2)) index;
-    in
-    [
-      "-s"
-      "-w"
-    ]
-    ++ builtins.map (list: "-X '${cmd}.${builtins.elemAt list 0}=${builtins.elemAt list 1}'") [
-      [
-        "libVersion"
-        (elemAt (split "\n" (
-          elemAt (match ".*github.com\/apernet\/quic-go (.*)" (readFile (src + "/core/go.mod"))) 0
-        )) 0)
-      ]
-      [
-        "appVersion"
-        version
-      ]
-      [
-        "appDate"
-        lastModifiedDate
-      ]
-      [
-        "appType"
-        "release"
-      ]
-      [
-        "appCommit"
-        rev
-      ]
-      [
-        "appPlatform"
-        (goPlatform 0)
-      ]
-      [
-        "appArch"
-        (goPlatform 2)
-      ]
-      [
-        "appToolchain"
-        goVersion
-      ]
-    ];
+  ldflags = [
+    "-s"
+    "-w"
+  ];
+
+  preBuild = ''
+    goVersionOutput=$(go version)
+    goVersionInfo=$(echo "$goVersionOutput" | sed 's/^go version //')
+    goToolchain=$(echo "$goVersionInfo" | awk '{print $1}')
+    goPlatform=$(echo "$goVersionInfo" | awk '{print $2}' | cut -d/ -f1)
+    goArch=$(echo "$goVersionInfo" | awk '{print $2}' | cut -d/ -f2)
+
+    ldflags="$ldflags -X '${cmd}.libVersion=${versions.libVersion}'"
+    ldflags="$ldflags -X '${cmd}.appVersion=${version}'"
+    ldflags="$ldflags -X '${cmd}.appDate=${versions.date}'"
+    ldflags="$ldflags -X '${cmd}.appType=release'"
+    ldflags="$ldflags -X '${cmd}.appCommit=${versions.rev}'"
+    ldflags="$ldflags -X '${cmd}.appPlatform=$goPlatform'"
+    ldflags="$ldflags -X '${cmd}.appArch=$goArch'"
+    ldflags="$ldflags -X '${cmd}.appToolchain=$goToolchain'"
+  '';
 
   patchPhase = ''
     rm app/internal/http/server_test.go \

@@ -1,0 +1,88 @@
+name: "Auto-update"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+jobs:
+  check-and-create-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - run: nix flake update
+      - run: ./update.sh
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet flake.lock versions.json 2>/dev/null; then
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "updated=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build PR summary
+        if: steps.changes.outputs.updated == 'true'
+        id: summary
+        run: |
+          old_version=$(git show HEAD:versions.json | jq -r '.version')
+          new_version=$(jq -r '.version' versions.json)
+          old_lock=$(git show HEAD:flake.lock)
+
+          body="## Summary"$'\n\n'
+
+          # Hysteria version section
+          if [ "$old_version" != "$new_version" ]; then
+            body+="### Hysteria"$'\n\n'
+            body+="| Package | Old | New |"$'\n'
+            body+="|---------|-----|-----|"$'\n'
+            body+="| hysteria | \`${old_version}\` | \`${new_version}\` |"$'\n'
+            body+="| Release | | [v${new_version}](https://github.com/apernet/hysteria/releases/tag/app/v${new_version}) |"$'\n'
+            body+=$'\n'
+          fi
+
+          # Flake inputs section
+          flake_rows=""
+          for input in $(jq -r '.nodes.root.inputs | keys[]' flake.lock); do
+            old_rev=$(echo "$old_lock" | jq -r ".nodes[\"${input}\"].locked.rev // empty" | head -c 7)
+            new_rev=$(jq -r ".nodes[\"${input}\"].locked.rev // empty" flake.lock | head -c 7)
+            if [ "$old_rev" != "$new_rev" ] && [ -n "$old_rev" ]; then
+              flake_rows+="| ${input} | \`${old_rev}\` | \`${new_rev}\` |"$'\n'
+            fi
+          done
+          if [ -n "$flake_rows" ]; then
+            body+="### Flake inputs"$'\n\n'
+            body+="| Input | Old | New |"$'\n'
+            body+="|-------|-----|-----|"$'\n'
+            body+="$flake_rows"$'\n'
+          fi
+
+          echo "$body" > /tmp/pr-body.md
+      - name: Create or update Pull Request
+        if: steps.changes.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch="auto-update/$(date +%Y-%m-%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add flake.lock versions.json
+          git commit -m "Auto-update hysteria $(date +%Y-%m-%d)" -m "$(cat /tmp/pr-body.md)"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push --force -u origin "$branch"
+          existing_pr=$(gh pr list --head "$branch" --json number --jq '.[0].number // empty')
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr" \
+              --title "Auto-update hysteria $(date +%Y-%m-%d)" \
+              --body-file /tmp/pr-body.md
+          else
+            gh pr create \
+              --title "Auto-update hysteria $(date +%Y-%m-%d)" \
+              --label "auto-update" \
+              --body-file /tmp/pr-body.md
+          fi
