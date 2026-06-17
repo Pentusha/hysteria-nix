@@ -1,8 +1,16 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   inherit (lib) mkIf;
   cfg = config.services.hysteria.server;
+
+  tlsCert = pkgs.runCommand "hysteria-selfsigned-tls" { } ''
+    ${pkgs.openssl}/bin/openssl req -x509 -newkey rsa:4096 \
+      -keyout "$out/key.pem" \
+      -out "$out/cert.pem" \
+      -days 3650 -nodes \
+      -subj "/CN=hysteria-server"
+  '';
 in
 {
   services.hysteria.server = {
@@ -11,10 +19,9 @@ in
     settings = {
       listen = ":443";
 
-      acme = {
-        domains = [ "your-domain.example.com" ];
-        email = "admin@example.com";
-        type = "http";
+      tls = {
+        cert = "${tlsCert}/cert.pem";
+        key = "${tlsCert}/key.pem";
       };
 
       bandwidth = {
@@ -38,6 +45,5 @@ in
     };
   };
 
-  # hysteria2 uses UDP for the main listen port
   networking.firewall.allowedUDPPorts = mkIf cfg.enable [ 443 ];
 }
