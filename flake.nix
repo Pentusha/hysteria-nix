@@ -70,5 +70,13 @@ rec {
     )
     // {
       nixosModules.default = import ./module.nix self.packages;
+
+      nixosConfigurations.vultr = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./hosts/vultr
+          self.nixosModules.default
+        ];
+      };
     };
 }
