@@ -1,8 +1,8 @@
 {
-  "version": "2.9.2",
-  "hash": "sha256-42tXqHMHh8QMRcKl92e6UlSeGLgo28x3J8YW8t3F6dY=",
-  "vendorHash": "sha256-kAPijL+wblFvzF1efKUUSDMDJqYtDt5B44aXhImOd78=",
-  "rev": "c3a806b5cbbb20fe72099529573da26b1a2e9f22",
-  "date": "20260523",
-  "libVersion": "v0.59.1-0.20260425001925-6c6cc9bcb716"
+  "version": "2.9.3",
+  "hash": "sha256-Ki6rEiLG4JQt6P0Bw62jlqJHLTL3GtZH3QQaYOU8OGE=",
+  "vendorHash": "sha256-fmKqdGbDBE1Efs3npO23wU6NxloflIMfubY6+Wx15wM=",
+  "rev": "2d973f9513ef661d1922d6d14acb37945caef47d",
+  "date": "20260618",
+  "libVersion": "v0.60.1-0.20260618182935-599b15a1fa26"
 }
